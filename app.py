@@ -1,20 +1,42 @@
 import streamlit as st
-from openai import OpenAI
+from groq import Groq
 
-# پەیوەندی بە LM Studio (دڵنیابە سێرڤەرەکەت لەسەر پۆرت 1234 کار دەکات)
-client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+# ڕێکخستنی لاپەڕەکە
+st.set_page_config(page_title="CodexAI Pro", page_icon="💻")
+st.title("💻 CodexAI Pro")
+st.subheader("یاریدەدەرێکی پسپۆڕ بۆ کۆد و لۆژیک")
 
-st.title("🤖 AI Assistant Pro")
-st.write("پرسیارەکەت بنووسە و مۆدێلەکەت وەڵامت دەداتەوە!")
+# بانگکردنی API Key لە Secrets
+try:
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+except:
+    st.error("تکایە کلیلی APIـەکەت لە بەشی Secrets دابنێ.")
+    st.stop()
 
-if prompt := st.chat_input("لێرە بینووسە..."):
+# سەرەتای چات
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "system", "content": "تۆ یاریدەدەرێکی شارەزایت لە کۆدینگی پایتۆن و چارەسەرکردنی هەڵەکان."}
+    ]
+
+# نیشاندانی چات
+for message in st.session_state.messages:
+    if message["role"] != "system":
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+# وەرگرتنی نووسین لە بەکارهێنەر
+if prompt := st.chat_input("کۆدەکەت لێرە بنووسە یان پرسیار بکە..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
-    
+
     with st.chat_message("assistant"):
-        response = client.chat.completions.create(
-            model="local-model",
-            messages=[{"role": "user", "content": prompt}]
+        stream = client.chat.completions.create(
+            model="llama3-8b-8192",
+            messages=st.session_state.messages,
+            stream=True,
         )
-        answer = response.choices[0].message.content
-        st.markdown(answer)
+        response = st.write_stream(stream)
+    
+    st.session_state.messages.append({"role": "assistant", "content": response})
