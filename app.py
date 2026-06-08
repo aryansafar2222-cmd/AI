@@ -6,11 +6,10 @@ st.set_page_config(page_title="CodexAI Pro", page_icon="🤖")
 st.title("🤖 CodexAI Pro")
 
 # بانگکردنی API Key لە Secrets
-# دڵنیا بەرەوە لە Streamlit Secrets نووسیبێتت: GROQ_API_KEY = "gsk_..."
 try:
     api_key = st.secrets["GROQ_API_KEY"]
     client = Groq(api_key=api_key)
-except Exception as e:
+except:
     st.error("تکایە کلیلی API لە بەشی Secrets دابنێ!")
     st.stop()
 
@@ -29,15 +28,15 @@ if prompt := st.chat_input("پرسیارەکەت لێرە بنووسە..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # ناردنی پرسیار بۆ مۆدێلی AI بە بەکارهێنانی Groq
+    # ناردنی پرسیار بۆ مۆدێلی AI بە بەکارهێنانی مۆدێلە نوێیەکەی Groq
     with st.chat_message("assistant"):
         try:
             stream = client.chat.completions.create(
-                model="llama3-8b-8192",
+                model="llama-3.1-8b-instant",  # ئەمە مۆدێلە نوێیەکەیە
                 messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
                 stream=True,
             )
             response = st.write_stream(stream)
             st.session_state.messages.append({"role": "assistant", "content": response})
         except Exception as e:
-            st.error(f"هەڵەیەک ڕوویدا: {e}")ion_state.messages.append({"role": "assistant", "content": response})
+            st.error(f"هەڵەیەک ڕوویدا: {e}")
