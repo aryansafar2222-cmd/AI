@@ -2,41 +2,42 @@ import streamlit as st
 from groq import Groq
 
 # ڕێکخستنی لاپەڕەکە
-st.set_page_config(page_title="CodexAI Pro", page_icon="💻")
-st.title("💻 CodexAI Pro")
-st.subheader("یاریدەدەرێکی پسپۆڕ بۆ کۆد و لۆژیک")
+st.set_page_config(page_title="CodexAI Pro", page_icon="🤖")
+st.title("🤖 CodexAI Pro")
 
 # بانگکردنی API Key لە Secrets
+# دڵنیا بەرەوە لە Streamlit Secrets نووسیبێتت: GROQ_API_KEY = "gsk_..."
 try:
-    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-except:
-    st.error("تکایە کلیلی APIـەکەت لە بەشی Secrets دابنێ.")
+    api_key = st.secrets["GROQ_API_KEY"]
+    client = Groq(api_key=api_key)
+except Exception as e:
+    st.error("تکایە کلیلی API لە بەشی Secrets دابنێ!")
     st.stop()
 
-# سەرەتای چات
+# پاشەکەوتکردنی وەڵامەکان لە میمۆریدا
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "تۆ یاریدەدەرێکی شارەزایت لە کۆدینگی پایتۆن و چارەسەرکردنی هەڵەکان."}
-    ]
+    st.session_state.messages = []
 
-# نیشاندانی چات
+# نیشاندانی وەڵامە کۆنەکان
 for message in st.session_state.messages:
-    if message["role"] != "system":
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# وەرگرتنی نووسین لە بەکارهێنەر
-if prompt := st.chat_input("کۆدەکەت لێرە بنووسە یان پرسیار بکە..."):
+# وەرگرتنی پرسیار لە بەکارهێنەر
+if prompt := st.chat_input("پرسیارەکەت لێرە بنووسە..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # ناردنی پرسیار بۆ مۆدێلی AI بە بەکارهێنانی Groq
     with st.chat_message("assistant"):
-        stream = client.chat.completions.create(
-            model="llama3-8b-8192",
-            messages=st.session_state.messages,
-            stream=True,
-        )
-        response = st.write_stream(stream)
-    
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        try:
+            stream = client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
+                stream=True,
+            )
+            response = st.write_stream(stream)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+        except Exception as e:
+            st.error(f"هەڵەیەک ڕوویدا: {e}")ion_state.messages.append({"role": "assistant", "content": response})
